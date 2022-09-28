@@ -1,0 +1,37 @@
+static float pointsX[10]
+static float pointsY[10]
+float counter = 0
+
+int CVICALLBACK TIMER (int panel, int control, int event,
+		void *callbackData, int eventData1, int eventData2)
+{
+	switch (event)
+	{
+		case EVENT_TIMER_TICK:
+
+			double v2, v3;
+			analogIn(2, &v2);
+			analogIn(3, &v3);
+			SetCtrlVal(panelHandle,PANEL_NUMERIC,v2);
+			SetCtrlVal(panelHandle,PANEL_NUMERIC_2,v3);
+			v2 = (1.0/2.5)*v2 - 1.0;
+			v3 = (1.0/2.5)*v3 - 1.0;
+			SetCtrlVal(panelHandle,PANEL_NUMERIC_3,v2);
+			SetCtrlVal(panelHandle,PANEL_NUMERIC_4,v3);
+			if (counter == 8){
+				counter = 0
+				pointsX[counter] = v3
+				pointsY[counter] = v4
+			}else{
+				pointsX[counter] = v3
+				pointsY[counter] = v4
+			}
+			DeleteGraphPlot(panelHandle, PANEL_GRAPH, -1, VAL_DELAYED_DRAW);
+			SetAxisScalingMode(panelHandle,PANEL_GRAPH, VAL_BOTTOM_XAXIS, VAL_MANUAL, -1, 1);
+			SetAxisScalingMode(panelHandle,PANEL_GRAPH, VAL_LEFT_YAXIS, VAL_MANUAL, -1, 1);
+			//Рисуем по массиву точек
+			PlotPoint(panelHandle, PANEL_GRAPH, v2, v3, VAL_SOLID_SQUARE, VAL_GREEN);
+			
+	}
+	return 0;
+}
