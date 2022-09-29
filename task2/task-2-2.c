@@ -27,7 +27,13 @@
 //==============================================================================
 // Static global variables
 
+#define N 20
+
 static int panelHandle;
+static float pointsX[N];
+static float pointsY[N];
+int counter = 0;
+
 
 //==============================================================================
 // Static functions
@@ -47,7 +53,11 @@ int main (int argc, char *argv[])
     nullChk (InitCVIRTE (0, argv, 0));
     errChk (panelHandle = LoadPanel (0, "task-2-2.uir", PANEL));
 	
-	ni6251Slot(2); 
+	ni6251Slot(2);
+	for (int i = 0; i < N; i++){
+		pointsX[i] = 10.;
+		pointsY[i] = 10.;
+	}
     
     /* display the panel and run the user interface */
     errChk (DisplayPanel (panelHandle));
@@ -81,20 +91,35 @@ int CVICALLBACK TIMER (int panel, int control, int event,
 	{
 		case EVENT_TIMER_TICK:
 
-			double v2, v3;
-			analogIn(2, &v2);
-			analogIn(3, &v3);
-			SetCtrlVal(panelHandle,PANEL_NUMERIC,v2);
-			SetCtrlVal(panelHandle,PANEL_NUMERIC_2,v3);
-			v2 = (1.0/2.5)*v2 - 1.0;
-			v3 = (1.0/2.5)*v3 - 1.0;
-			SetCtrlVal(panelHandle,PANEL_NUMERIC_3,v2);
-			SetCtrlVal(panelHandle,PANEL_NUMERIC_4,v3);
-			//DeleteGraphPlot(panelHandle, PANEL_GRAPH, -1, VAL_DELAYED_DRAW);
-			SetAxisScalingMode(panelHandle,PANEL_GRAPH, VAL_BOTTOM_XAXIS, VAL_MANUAL, -1, 1);
-			SetAxisScalingMode(panelHandle,PANEL_GRAPH, VAL_LEFT_YAXIS, VAL_MANUAL, -1, 1);
-			PlotPoint(panelHandle, PANEL_GRAPH, v2, v3, VAL_SOLID_SQUARE, VAL_GREEN);
-			
+			double vx, vy;
+			analogIn(2, &vx);
+			analogIn(3, &vy);
+			SetCtrlVal(panelHandle,PANEL_NUMERIC,vx);
+			SetCtrlVal(panelHandle,PANEL_NUMERIC_2,vy);
+			vx = -1.0 * ((1.0/2.4)*vx - 1.0);  //x
+			vy = (1.0/2.38)*vy - 1.0;		   //y
+			if (counter == N){
+				counter = 0;
+				pointsX[counter] = vx;
+				pointsY[counter] = vy;
+				counter++;
+			}else{
+				pointsX[counter] = vx;
+				pointsY[counter] = vy;
+				counter++;
+			}
+			SetCtrlVal(panelHandle,PANEL_NUMERIC_3,vx);
+			SetCtrlVal(panelHandle,PANEL_NUMERIC_4,vy);
+			DeleteGraphPlot(panelHandle, PANEL_GRAPH, -1, VAL_DELAYED_DRAW);
+			SetAxisScalingMode(panelHandle,PANEL_GRAPH, VAL_BOTTOM_XAXIS, VAL_MANUAL, -1.1, 1.1);
+			SetAxisScalingMode(panelHandle,PANEL_GRAPH, VAL_LEFT_YAXIS, VAL_MANUAL, -1.1, 1.1);
+			for (int i = 0; i < N; i++){
+				PlotPoint(panelHandle, PANEL_GRAPH, pointsX[i], pointsY[i], VAL_SOLID_SQUARE, VAL_GREEN);
+			}
 	}
 	return 0;
 }
+
+
+
+

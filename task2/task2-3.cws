@@ -1,6 +1,6 @@
 [Workspace Header]
 Version = 900
-Pathname = "/d/TSANI/WORK/khubiev/task2/task-2-2.cws"
+Pathname = "/d/TSANI/WORK/khubiev/task2/task2-3.cws"
 CVI Dir = "/c/program files (x86)/national instruments/cvi90"
 CVI Shared Dir = "/C/Program Files (x86)/National Instruments/Shared/CVI"
 CVI Pub Local Dir = "/C/ProgramData/National Instruments/CVI90"
@@ -9,7 +9,7 @@ IVI Standard Root Dir = "/C/Program Files (x86)/IVI"
 VXIplug&play Framework Dir = "/C/VXIPNP/winnt"
 Number of Projects = 1
 Active Project = 1
-Project 0001 = "task-2-2.prj"
+Project 0001 = "task2-3.prj"
 Drag Bar Left = 292
 Window Top = 38
 Window Left = 295
@@ -45,19 +45,19 @@ Batch Build Debug = False
 Force Rebuild = False
 
 [File 0001]
-Path = "/d/TSANI/WORK/khubiev/task2/task-2-2.c"
+Path = "/d/TSANI/WORK/khubiev/task2/task2-3.c"
 File Type = "CSource"
-Disk Date = 3747203920
+Disk Date = 3747209009
 In Projects = "1,"
 Window Top = 62
 Window Left = 26
 Window Z-Order = 1
-Source Window State = "1,98,98,98,12,45,12,0,0,198,0,28,0,0,0,71,55,0,99,26,349,711,1,0,"
+Source Window State = "1,188,188,188,32,41,41,0,0,198,0,79,0,0,0,71,159,0,160,179,349,711,1,10,"
 
 [File 0002]
-Path = "/d/TSANI/WORK/khubiev/task2/task-2-2.uir"
+Path = "/d/TSANI/WORK/khubiev/task2/task2-3.uir"
 File Type = "User Interface Resource"
-Disk Date = 3747203192
+Disk Date = 3747207547
 In Projects = "1,"
 Window Top = 32
 Window Left = 10
