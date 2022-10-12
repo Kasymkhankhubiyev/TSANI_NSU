@@ -22,10 +22,8 @@
 #define  PANEL_CONTROLBUTTON              6       /* callback function: controlcb */
 #define  PANEL_TIMER                      7       /* callback function: cbtimer */
 #define  PANEL_STRIPCHART                 8
-#define  PANEL_STIMER                     9       /* callback function: stimer */
-#define  PANEL_CONTROLTIMER               10      /* callback function: timecontrol */
-#define  PANEL_NUMERIC_2                  11
-#define  PANEL_TIMER_2                    12      /* callback function: timebig */
+#define  PANEL_CONTROLTIMER               9       /* callback function: timecontrol */
+#define  PANEL_NUMERIC_2                  10
 
 
      /* Menu Bars, Menus, and Menu Items: */
@@ -40,8 +38,6 @@ int  CVICALLBACK cbtermometr(int panel, int control, int event, void *callbackDa
 int  CVICALLBACK cbtimer(int panel, int control, int event, void *callbackData, int eventData1, int eventData2);
 int  CVICALLBACK controlcb(int panel, int control, int event, void *callbackData, int eventData1, int eventData2);
 int  CVICALLBACK panelCB(int panel, int event, void *callbackData, int eventData1, int eventData2);
-int  CVICALLBACK stimer(int panel, int control, int event, void *callbackData, int eventData1, int eventData2);
-int  CVICALLBACK timebig(int panel, int control, int event, void *callbackData, int eventData1, int eventData2);
 int  CVICALLBACK timecontrol(int panel, int control, int event, void *callbackData, int eventData1, int eventData2);
 
 

@@ -75,6 +75,116 @@ int CVICALLBACK panelCB (int panel, int event, void *callbackData,
 
 int heatst = 0;
 int overheatst = 0;
+int power = 100;
+int counter = 0;
+int pid_state = 0;
+double prev_temp = 100;
+
+
+void set_switch(int state){
+	if (state == 1){
+		portOut(1, 1 << 7);
+		counter = 0;
+	}else{
+		portOut(1, 0);
+		counter = 0;
+	}
+}
+
+
+double prev_temps[5];
+int number = 0;
+
+
+void onoffctrl(int panel){
+	if (pid_state){
+		double req_temp;
+		double temp;
+		GetCtrlVal(panel, PANEL_NUMERIC, &req_temp);
+		analogIn(2, &temp);
+		temp *= 100;
+		double integ = 0;
+		//ouble diff = (temp - prev_temp)/0.2;
+		double k1 = 1.0;
+		double k2 = 5.0;
+		double k3 = 10.0;
+		
+		if (number == 5){
+			number = 0;
+		}
+		prev_temps[number] = temp;
+		
+		double diff[5];
+		
+		for(int i=0; i < 5; i++){
+			diff[i]= req_temp - prev_temps[i];
+			integ += diff[i] * 0.1;
+		}
+		
+		power = k1 * (req_temp - temp) + k2 * integ; // + k2 * integ + k3 * diff);
+		//if ()
+		SetCtrlVal(panelHandle,PANEL_NUMERIC_2, power);
+		
+		//prev_temp = temp;
+		
+		
+		/*
+		if ((temp - req_temp)/2 > 0.05){
+			set_switch(0);
+			SetCtrlAttribute(panel, PANEL_CONTROLTIMER, ATTR_ENABLED, 0);
+			power -= 1;
+			SetCtrlVal(panelHandle,PANEL_NUMERIC_2, power);
+		}
+		if(temp < req_temp){
+			set_switch(1);
+			SetCtrlAttribute(panel, PANEL_CONTROLTIMER, ATTR_ENABLED, 1);
+		}else{
+			if(temp > req_temp){
+			set_switch(0);
+			SetCtrlAttribute(panel, PANEL_CONTROLTIMER, ATTR_ENABLED, 0);
+			} 
+		
+		}*/
+	}
+}
+
+
+void onoffctrlxxx(int panel){
+	if (pid_state){
+		double req_temp;
+		double temp;
+		GetCtrlVal(panel, PANEL_NUMERIC, &req_temp);
+		analogIn(2, &temp);
+		temp *= 100;
+		
+		double delta = temp - req_temp;
+		
+		if (delta < 0){
+			delta *= -1;
+		}
+		
+		if (((temp - req_temp)/2 > 0.05) && ((temp - req_temp)/2 < 1.)){	 //
+			set_switch(0);
+			power = (int)(28000 * delta);
+			SetCtrlVal(panel,PANEL_NUMERIC_2, power);
+			SetCtrlAttribute(panel, PANEL_CONTROLTIMER, ATTR_ENABLED, 0);
+		}
+		if(temp < req_temp){
+			set_switch(1);
+			power = (int)(300 * delta);
+			SetCtrlVal(panel,PANEL_NUMERIC_2, power);
+			SetCtrlAttribute(panel, PANEL_CONTROLTIMER, ATTR_ENABLED, 1);
+		}else{
+			if(temp > req_temp){
+			set_switch(0);
+			SetCtrlVal(panel,PANEL_NUMERIC_2, 0) ;
+			SetCtrlAttribute(panel, PANEL_CONTROLTIMER, ATTR_ENABLED, 0);
+			} 
+		
+		}
+	}
+}
+
 
 int CVICALLBACK cbtimer (int panel, int control, int event,
 		void *callbackData, int eventData1, int eventData2) {
@@ -87,6 +197,8 @@ int CVICALLBACK cbtimer (int panel, int control, int event,
 			//SetCtrlVal(panelHandle,PANEL_TEMP, volt * 100);
 			SetCtrlVal(panelHandle,PANEL_NUMERICTHERM, volt*100);
 			PlotStripChartPoint(panel, PANEL_STRIPCHART, volt*100);
+			//GetCtrlVal(panel, PANEL_NUMERIC_2, &power);
+			onoffctrl(panel);
 			
 			unsigned char data;
 			portIn(1, &data);
@@ -135,16 +247,6 @@ int CVICALLBACK cbtermometr (int panel, int control, int event,
 	return 0;
 }
 
-void set_switch(int state){
-	if (state == 1){
-		portOut(1, 1 << 7);
-	}else{
-		portOut(1, 0);
-	}
-}
-
-int percent = 0;
-
 int CVICALLBACK BTNcb (int panel, int control, int event,
 		void *callbackData, int eventData1, int eventData2) {
 	switch (event) {
@@ -153,8 +255,15 @@ int CVICALLBACK BTNcb (int panel, int control, int event,
 			int state;
 			
 			GetCtrlVal(panel, PANEL_TOGGLEBUTTON, &state);
-			SetCtrlAttribute(panel, PANEL_STIMER, ATTR_ENABLED, state);
-			GetCtrlVal(panel, PANEL_NUMERIC_2, &percent);
+			SetCtrlAttribute(panel, PANEL_CONTROLTIMER, ATTR_ENABLED, state);
+			GetCtrlVal(panel, PANEL_NUMERIC_2, &power);
+			if (state == 1){
+				double temp;
+				GetCtrlVal(panel,PANEL_NUMERICTHERM, &temp);
+				for(int i = 0; i++; i<5){
+					prev_temps[i] = temp; 
+				}
+			}
 			
 			set_switch(state);
 			
@@ -174,19 +283,6 @@ int CVICALLBACK BTNcb (int panel, int control, int event,
 	}
 	return 0;
 }
-int on = 1;
-int sign = 0;
-int bigtimer = 0;
-
-int counter = 0;
-
-void shimctrl(int panel, int state){
-	
-	//SetCtrlAttribute(panel, PANEL_TIMER_2, ATTR_ENABLED, state);
-	//if (state == 0){
-		//SetCtrlAttribute(panel, PANEL_STIMER, ATTR_ENABLED, state);
-	//}
-}
 
 int CVICALLBACK controlcb (int panel, int control, int event,
 		void *callbackData, int eventData1, int eventData2) {
@@ -195,8 +291,12 @@ int CVICALLBACK controlcb (int panel, int control, int event,
 			
 			int state;
 			GetCtrlVal(panel, PANEL_CONTROLBUTTON, &state);
+			pid_state = state;
+			set_switch(state);
 			SetCtrlAttribute(panel, PANEL_CONTROLTIMER, ATTR_ENABLED, state);
-			shimctrl(panel, state);
+			GetCtrlVal(panel, PANEL_NUMERICTHERM, &prev_temp);
+			//SetCtrlAttribute(panel, PANEL_CONTROLTIMER, ATTR_ENABLED, state);
+			//shimctrl(panel, state);
 
 			break;
 		case EVENT_LEFT_CLICK:
@@ -215,79 +315,23 @@ int CVICALLBACK controlcb (int panel, int control, int event,
 	return 0;
 }
 
-void onoffctrl(int panel){
-	double req_temp;
-	double temp;
-	GetCtrlVal(panel, PANEL_NUMERIC, &req_temp);
-	analogIn(2, &temp);
-	temp *= 100;
-	if (abs(temp - req_temp)/2 > 0.1){
-		set_switch(0);
-	}
-	if(temp < req_temp){
-		set_switch(1);
-	}else{
-		if(temp > req_temp){
-			set_switch(0);
-		} 
-		
-	}
-}
-
 int CVICALLBACK timecontrol (int panel, int control, int event,
 		void *callbackData, int eventData1, int eventData2) {
 	switch (event) {
 		case EVENT_TIMER_TICK:
 			
-			onoffctrl(panel);
-			break;
-		case EVENT_DISCARD:
-
-			break;
-	}
-	return 0;
-}
-
-
-int CVICALLBACK stimer (int panel, int control, int event,
-		void *callbackData, int eventData1, int eventData2) {
-	switch (event) {
-		case EVENT_TIMER_TICK:
-			if (counter == percent/10){
+			if (counter > power){
 				set_switch(0);
-				counter = 0;
+				counter += 1;
+				if (counter == 100){
+					counter = 0;
+				}
 			}else{
+				if (counter == 0){
+					set_switch(1);
+				}
 				counter += 1;
 			}
-			//if (on){
-				//set_switch(0);
-				//on = 0;
-			//}else{
-				//set_switch(1);
-				//on = 1;
-			//}
-			
-
-			break;
-		case EVENT_DISCARD:
-
-			break;
-	}
-	return 0;
-}
-
-int CVICALLBACK timebig (int panel, int control, int event,
-		void *callbackData, int eventData1, int eventData2) {
-	switch (event) {
-		case EVENT_TIMER_TICK:
-			if (bigtimer == 1){
-				SetCtrlAttribute(panel, PANEL_STIMER, ATTR_ENABLED, 0);
-				bigtimer = 0;
-			}else{
-				SetCtrlAttribute(panel, PANEL_STIMER, ATTR_ENABLED, 1);
-				bigtimer = 1;
-			}
-
 			break;
 		case EVENT_DISCARD:
 
