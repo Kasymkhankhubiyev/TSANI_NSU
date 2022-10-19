@@ -11,11 +11,11 @@ Number of Projects = 1
 Active Project = 1
 Project 0001 = "task8.prj"
 Drag Bar Left = 280
-Window Top = 101
-Window Left = 119
-Window Bottom = 1050
-Window Right = 1474
-Maximized = False
+Window Top = 40
+Window Left = 139
+Window Bottom = 989
+Window Right = 1494
+Maximized = True
 Maximized Children = True
 Max Number Of Errors = 20
 Track Include File Dependencies = True
@@ -47,17 +47,17 @@ Force Rebuild = False
 [File 0001]
 Path = "/d/TSANI/WORK/khubiev/task8.c"
 File Type = "CSource"
-Disk Date = 3748424865
+Disk Date = 3749029144
 In Projects = "1,"
 Window Top = 62
 Window Left = 22
 Window Z-Order = 1
-Source Window State = "1,123,123,123,22,29,29,0,0,110,0,210,0,0,0,53,96,0,108,21,427,808,1,11,"
+Source Window State = "1,104,106,106,145,145,145,0,0,146,0,210,0,0,0,36,78,0,96,4,427,808,1,11,"
 
 [File 0002]
 Path = "/d/TSANI/WORK/khubiev/task8.uir"
 File Type = "User Interface Resource"
-Disk Date = 3748415145
+Disk Date = 3749028828
 In Projects = "1,"
 Window Top = 32
 Window Left = 6

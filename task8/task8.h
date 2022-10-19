@@ -24,6 +24,16 @@
 #define  PANEL_STRIPCHART                 8
 #define  PANEL_CONTROLTIMER               9       /* callback function: timecontrol */
 #define  PANEL_NUMERIC_2                  10
+#define  PANEL_K1                         11
+#define  PANEL_K2                         12
+#define  PANEL_K3                         13
+#define  PANEL_K1val                      14
+#define  PANEL_K2val                      15
+#define  PANEL_K3val                      16
+#define  PANEL_STRIPCHART_2               17
+#define  PANEL_STRIPCHART_4               18
+#define  PANEL_STRIPCHART_5               19
+#define  PANEL_STRIPCHART_3               20
 
 
      /* Menu Bars, Menus, and Menu Items: */

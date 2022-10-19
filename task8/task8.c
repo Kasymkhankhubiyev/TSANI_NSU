@@ -78,7 +78,7 @@ int overheatst = 0;
 int power = 100;
 int counter = 0;
 int pid_state = 0;
-double prev_temp = 100;
+//double prev_temp = 100;
 
 
 void set_switch(int state){
@@ -91,60 +91,84 @@ void set_switch(int state){
 	}
 }
 
+#define n 100
 
-double prev_temps[5];
+double prev_temps[n];
 int number = 0;
 
 
 void onoffctrl(int panel){
-	if (pid_state){
+	if (pid_state == 1){
 		double req_temp;
 		double temp;
 		GetCtrlVal(panel, PANEL_NUMERIC, &req_temp);
 		analogIn(2, &temp);
 		temp *= 100;
+		//temp += 10;
 		double integ = 0;
+		double diffitem = 0;
 		//ouble diff = (temp - prev_temp)/0.2;
-		double k1 = 1.0;
-		double k2 = 5.0;
-		double k3 = 10.0;
+		double k1 = 0;
+		double k2 = 0;
+		double k3 = 0;
+		double diff[n];
 		
-		if (number == 5){
+		GetCtrlVal(panel, PANEL_K1, &k1);
+		GetCtrlVal(panel, PANEL_K2, &k2);
+		GetCtrlVal(panel, PANEL_K3, &k3);
+		
+		prev_temps[number] = temp;
+		number+=1;
+		if (number == n){
 			number = 0;
 		}
-		prev_temps[number] = temp;
 		
-		double diff[5];
 		
-		for(int i=0; i < 5; i++){
+		for(int i=0; i < n; i++){
 			diff[i]= req_temp - prev_temps[i];
-			integ += diff[i] * 0.1;
 		}
 		
-		power = k1 * (req_temp - temp) + k2 * integ; // + k2 * integ + k3 * diff);
-		//if ()
-		SetCtrlVal(panelHandle,PANEL_NUMERIC_2, power);
-		
-		//prev_temp = temp;
-		
-		
-		/*
-		if ((temp - req_temp)/2 > 0.05){
-			set_switch(0);
-			SetCtrlAttribute(panel, PANEL_CONTROLTIMER, ATTR_ENABLED, 0);
-			power -= 1;
-			SetCtrlVal(panelHandle,PANEL_NUMERIC_2, power);
+		integ = 0;
+		for(int i = 1; i < n; i++){
+			integ += diff[i];
 		}
-		if(temp < req_temp){
-			set_switch(1);
-			SetCtrlAttribute(panel, PANEL_CONTROLTIMER, ATTR_ENABLED, 1);
-		}else{
-			if(temp > req_temp){
-			set_switch(0);
-			SetCtrlAttribute(panel, PANEL_CONTROLTIMER, ATTR_ENABLED, 0);
-			} 
 		
-		}*/
+		double diff1 = 0;
+		for(int i = 1; i <n; i++){
+			diff1 += (diff[i] - diff[i-1])/0.1;
+		}
+		
+		double diff2 = 0;
+		for(int i = 50; i<n; i++){
+			diff2 += (diff[i] - diff[i-1])/0.1;
+		}
+		
+		diffitem = (diff2 - diff1)/50.;
+		
+		power = k1 * (req_temp - temp) + k2 * integ + k3 * diffitem;
+				
+		SetCtrlVal(panelHandle,PANEL_K1val, k1 * (req_temp - temp));
+		SetCtrlVal(panelHandle,PANEL_K2val, k2 * integ);
+		SetCtrlVal(panelHandle,PANEL_K3val, k3 * diffitem);
+				
+		SetAxisScalingMode(panel, PANEL_STRIPCHART_3,VAL_LEFT_YAXIS, VAL_AUTOSCALE, -800.0, 800.0);
+		PlotStripChartPoint(panel, PANEL_STRIPCHART_3, k1 * (req_temp - temp));
+				
+		SetAxisScalingMode(panel, PANEL_STRIPCHART_4,VAL_LEFT_YAXIS, VAL_AUTOSCALE, -800.0, 800.0);
+		PlotStripChartPoint(panel, PANEL_STRIPCHART_4, k2 * integ);
+				
+		SetAxisScalingMode(panel, PANEL_STRIPCHART_5,VAL_LEFT_YAXIS, VAL_AUTOSCALE, -800.0, 800.0);
+		PlotStripChartPoint(panel, PANEL_STRIPCHART_5, k3 * diffitem);
+		
+		if((temp - req_temp) < -10.) power = 100;
+		if((temp - req_temp) > 10.) power = 0;
+		if (power < 0){
+				power = 0;
+		}
+		if (power > 100){
+				power = 100;
+		}
+		SetCtrlVal(panelHandle,PANEL_NUMERIC_2, power);   	
 	}
 }
 
@@ -194,18 +218,26 @@ int CVICALLBACK cbtimer (int panel, int control, int event,
 			double volt;
 			analogIn(2, &volt);
 			
-			//SetCtrlVal(panelHandle,PANEL_TEMP, volt * 100);
 			SetCtrlVal(panelHandle,PANEL_NUMERICTHERM, volt*100);
 			PlotStripChartPoint(panel, PANEL_STRIPCHART, volt*100);
-			//GetCtrlVal(panel, PANEL_NUMERIC_2, &power);
 			onoffctrl(panel);
+			
+			double req_temp;
+			
+			GetCtrlVal(panel, PANEL_NUMERIC, &req_temp);
+			
+			
+			double dif; 
+			dif = req_temp - volt*100;
+			
+			
+			SetAxisScalingMode(panel, PANEL_STRIPCHART_2,VAL_LEFT_YAXIS, VAL_AUTOSCALE, -80.0, 80.0);
+			PlotStripChartPoint(panel, PANEL_STRIPCHART_2, dif);
 			
 			unsigned char data;
 			portIn(1, &data);
 			
-			//int heat = data & (1 << 7);
 			int overheat = data & (1 << 6);
-			
 			
 			if ((!overheat) && (1<<6)){
 				SetCtrlVal(panel, PANEL_LED, 1);
@@ -255,17 +287,8 @@ int CVICALLBACK BTNcb (int panel, int control, int event,
 			int state;
 			
 			GetCtrlVal(panel, PANEL_TOGGLEBUTTON, &state);
-			SetCtrlAttribute(panel, PANEL_CONTROLTIMER, ATTR_ENABLED, state);
-			GetCtrlVal(panel, PANEL_NUMERIC_2, &power);
-			if (state == 1){
-				double temp;
-				GetCtrlVal(panel,PANEL_NUMERICTHERM, &temp);
-				for(int i = 0; i++; i<5){
-					prev_temps[i] = temp; 
-				}
-			}
-			
 			set_switch(state);
+			
 			
 			
 		case EVENT_LEFT_CLICK:
@@ -294,9 +317,14 @@ int CVICALLBACK controlcb (int panel, int control, int event,
 			pid_state = state;
 			set_switch(state);
 			SetCtrlAttribute(panel, PANEL_CONTROLTIMER, ATTR_ENABLED, state);
-			GetCtrlVal(panel, PANEL_NUMERICTHERM, &prev_temp);
-			//SetCtrlAttribute(panel, PANEL_CONTROLTIMER, ATTR_ENABLED, state);
-			//shimctrl(panel, state);
+			if (state == 1){
+				double temp;
+				GetCtrlVal(panel,PANEL_NUMERICTHERM, &temp);
+				for(int i = 0; i<n; i++){
+					prev_temps[i] = temp; 
+				}
+			}
+			
 
 			break;
 		case EVENT_LEFT_CLICK:
@@ -320,18 +348,19 @@ int CVICALLBACK timecontrol (int panel, int control, int event,
 	switch (event) {
 		case EVENT_TIMER_TICK:
 			
-			if (counter > power){
+			if (counter >= power){
 				set_switch(0);
-				counter += 1;
-				if (counter == 100){
-					counter = 0;
-				}
-			}else{
-				if (counter == 0){
-					set_switch(1);
-				}
-				counter += 1;
+				
 			}
+			else{
+				set_switch(1);
+			}
+			
+			counter += 1;
+			if (counter >= 100){
+				counter = 0;
+			}
+			
 			break;
 		case EVENT_DISCARD:
 
