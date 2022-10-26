@@ -21,6 +21,8 @@
 //==============================================================================
 // Constants
 
+#define n 100       
+
 //==============================================================================
 // Types
 
@@ -84,26 +86,33 @@ int pid_state = 0;
 void set_switch(int state){
 	if (state == 1){
 		portOut(1, 1 << 7);
-		counter = 0;
 	}else{
 		portOut(1, 0);
-		counter = 0;
 	}
 }
 
-#define n 100
+
 
 double prev_temps[n];
 int number = 0;
 
 
 void onoffctrl(int panel){
-	if (pid_state == 1){
-		double req_temp;
-		double temp;
-		GetCtrlVal(panel, PANEL_NUMERIC, &req_temp);
-		analogIn(2, &temp);
-		temp *= 100;
+	
+	double req_temp;
+	double temp;
+	GetCtrlVal(panel, PANEL_NUMERIC, &req_temp);
+	analogIn(2, &temp);
+	temp *= 100;
+		
+		
+	SetCtrlVal(panelHandle,PANEL_NUMERICTHERM, temp);
+	PlotStripChartPoint(panel, PANEL_STRIPCHART, temp);
+	
+	SetAxisScalingMode(panel, PANEL_STRIPCHART_2,VAL_LEFT_YAXIS, VAL_AUTOSCALE, -80.0, 80.0);
+	PlotStripChartPoint(panel, PANEL_STRIPCHART_2, (req_temp - temp));
+		
+	if (pid_state == 1){ 
 		//temp += 10;
 		double integ = 0;
 		double diffitem = 0;
@@ -118,38 +127,68 @@ void onoffctrl(int panel){
 		GetCtrlVal(panel, PANEL_K3, &k3);
 		
 		prev_temps[number] = temp;
+		
+		integ = 0;
+		for(int i=0; i < n; i++){
+			diff[i]= req_temp - prev_temps[i];
+			integ += diff[i];
+		}
+		
+		double diff1 = 0;
+		double diff2 = 0;
+		
+		if (number < 50){
+			 
+			for (int i = 0; i < number + 1; i++){
+				diff1 += diff[i]; 
+			
+			}
+			int delta = 49 - number;
+			if (delta > 0){
+				for (int i = 100 - delta; i < n; i++){
+					diff1 += diff[i];
+				}
+			
+			}
+			for (int i = number + 1; i < number + 51; i++){
+				diff2 += diff[i];
+				
+			}
+		}
+		if (number >= 50){
+			for(int i = number+1; i<n; i++){
+				diff2 += diff[i];
+			}
+			int delta = number + 1 - 50;
+			if (delta > 0){
+				for (int i = 0; i < delta; i++)
+					diff2 += diff[i];
+			}
+			for (int i = number - 50; i < number+1; i++){
+				diff1 += diff[i];
+				
+			}
+		
+		}
+				
+		
+		diffitem = (diff1 - diff2)/50.;
+		
+		power = k1 * (req_temp - temp) + k2 * integ + k3 * diffitem;
+		
+		
+		
 		number+=1;
 		if (number == n){
 			number = 0;
 		}
 		
 		
-		for(int i=0; i < n; i++){
-			diff[i]= req_temp - prev_temps[i];
-		}
-		
-		integ = 0;
-		for(int i = 1; i < n; i++){
-			integ += diff[i];
-		}
-		
-		double diff1 = 0;
-		for(int i = 1; i <n; i++){
-			diff1 += (diff[i] - diff[i-1])/0.1;
-		}
-		
-		double diff2 = 0;
-		for(int i = 50; i<n; i++){
-			diff2 += (diff[i] - diff[i-1])/0.1;
-		}
-		
-		diffitem = (diff2 - diff1)/50.;
-		
-		power = k1 * (req_temp - temp) + k2 * integ + k3 * diffitem;
 				
 		SetCtrlVal(panelHandle,PANEL_K1val, k1 * (req_temp - temp));
 		SetCtrlVal(panelHandle,PANEL_K2val, k2 * integ);
 		SetCtrlVal(panelHandle,PANEL_K3val, k3 * diffitem);
+		
 				
 		SetAxisScalingMode(panel, PANEL_STRIPCHART_3,VAL_LEFT_YAXIS, VAL_AUTOSCALE, -800.0, 800.0);
 		PlotStripChartPoint(panel, PANEL_STRIPCHART_3, k1 * (req_temp - temp));
@@ -173,66 +212,13 @@ void onoffctrl(int panel){
 }
 
 
-void onoffctrlxxx(int panel){
-	if (pid_state){
-		double req_temp;
-		double temp;
-		GetCtrlVal(panel, PANEL_NUMERIC, &req_temp);
-		analogIn(2, &temp);
-		temp *= 100;
-		
-		double delta = temp - req_temp;
-		
-		if (delta < 0){
-			delta *= -1;
-		}
-		
-		if (((temp - req_temp)/2 > 0.05) && ((temp - req_temp)/2 < 1.)){	 //
-			set_switch(0);
-			power = (int)(28000 * delta);
-			SetCtrlVal(panel,PANEL_NUMERIC_2, power);
-			SetCtrlAttribute(panel, PANEL_CONTROLTIMER, ATTR_ENABLED, 0);
-		}
-		if(temp < req_temp){
-			set_switch(1);
-			power = (int)(300 * delta);
-			SetCtrlVal(panel,PANEL_NUMERIC_2, power);
-			SetCtrlAttribute(panel, PANEL_CONTROLTIMER, ATTR_ENABLED, 1);
-		}else{
-			if(temp > req_temp){
-			set_switch(0);
-			SetCtrlVal(panel,PANEL_NUMERIC_2, 0) ;
-			SetCtrlAttribute(panel, PANEL_CONTROLTIMER, ATTR_ENABLED, 0);
-			} 
-		
-		}
-	}
-}
-
 
 int CVICALLBACK cbtimer (int panel, int control, int event,
 		void *callbackData, int eventData1, int eventData2) {
 	switch (event) {
 		case EVENT_TIMER_TICK:
 			
-			double volt;
-			analogIn(2, &volt);
-			
-			SetCtrlVal(panelHandle,PANEL_NUMERICTHERM, volt*100);
-			PlotStripChartPoint(panel, PANEL_STRIPCHART, volt*100);
 			onoffctrl(panel);
-			
-			double req_temp;
-			
-			GetCtrlVal(panel, PANEL_NUMERIC, &req_temp);
-			
-			
-			double dif; 
-			dif = req_temp - volt*100;
-			
-			
-			SetAxisScalingMode(panel, PANEL_STRIPCHART_2,VAL_LEFT_YAXIS, VAL_AUTOSCALE, -80.0, 80.0);
-			PlotStripChartPoint(panel, PANEL_STRIPCHART_2, dif);
 			
 			unsigned char data;
 			portIn(1, &data);
