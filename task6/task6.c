@@ -47,8 +47,8 @@ int main (int argc, char *argv[])
     nullChk (InitCVIRTE (0, argv, 0));
     errChk (panelHandle = LoadPanel (0, "task6.uir", PANEL));
 	
-	fgenSlot(6);  //PXI-5402 - генератор
-	scopeSlot(7); //PXI-5114 - осциллограф
+	fgenSlot(6);  //PXI-5402 - ГЈГҐГ­ГҐГ°Г ГІГ®Г°
+	scopeSlot(7); //PXI-5114 - Г®Г±Г¶ГЁГ«Г«Г®ГЈГ°Г Гґ
     
     /* display the panel and run the user interface */
     errChk (DisplayPanel (panelHandle));
