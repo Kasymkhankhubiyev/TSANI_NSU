@@ -25,9 +25,14 @@
 #define  PANEL_FREQUENCY                  9       /* callback function: frequencyCB */
 #define  PANEL_POINTSNUMBER               10      /* callback function: pointnumberCB */
 #define  PANEL_ERRORS                     11
-#define  PANEL_COMMANDBUTTON              12      /* callback function: triggerCB */
-#define  PANEL_GRAPHFFT                   13
-#define  PANEL_TIMER                      14      /* callback function: TIMERCB */
+#define  PANEL_FREQLISTBUTTON             12      /* callback function: freqListCB */
+#define  PANEL_COMMANDBUTTON              13      /* callback function: triggerCB */
+#define  PANEL_GRAPHFFT                   14
+#define  PANEL_STEPSNUMBER                15
+#define  PANEL_STEPDURATION               16
+#define  PANEL_MINFREQ                    17
+#define  PANEL_MAXFREQ                    18
+#define  PANEL_TIMER                      19      /* callback function: TIMERCB */
 
 
      /* Menu Bars, Menus, and Menu Items: */
@@ -38,6 +43,7 @@
      /* Callback Prototypes: */
 
 int  CVICALLBACK amplitudeCB(int panel, int control, int event, void *callbackData, int eventData1, int eventData2);
+int  CVICALLBACK freqListCB(int panel, int control, int event, void *callbackData, int eventData1, int eventData2);
 int  CVICALLBACK frequencyCB(int panel, int control, int event, void *callbackData, int eventData1, int eventData2);
 int  CVICALLBACK panelCB(int panel, int event, void *callbackData, int eventData1, int eventData2);
 int  CVICALLBACK pointnumberCB(int panel, int control, int event, void *callbackData, int eventData1, int eventData2);

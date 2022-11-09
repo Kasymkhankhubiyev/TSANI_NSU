@@ -24,6 +24,8 @@
 // Constants
 double frequency = 1000.0, amplitude = 1.0;
 int points_number = 1000;
+int N = 100;
+double max_freq = 1000, min_freq=100, step_duration=0.01;
 
 int wave_form = 0;  
 /*
@@ -47,7 +49,7 @@ static int panelHandle;
 void InitDevices(void){
 
 	ViStatus gen_state, scope_state;
-	char error[22] = "cannot connect slots";
+	char error[22] = "Success";
 	
 	gen_state = fgenSlot(6);  //PXI-5402 - gen
 	scope_state = scopeSlot(7); //PXI-5114 - scope
@@ -91,14 +93,13 @@ void StartGeneration(){
 	scopeFrequency("", 10 * frequency, points_number);
 	
 	scopeTrigger("TRIG", amplitude/2, SCOPE_POSITIVE);
+	
 }
 
 void ReadPlotWaveForm(){
-	
-	double* wfm;
-	wfm = (double*)malloc(points_number*sizeof(double)); 
-	
 	scopeStart(points_number);
+	
+	double wfm[points_number];
 	
 	int nsr;
 	double h = 1. / (10. * frequency);
@@ -119,15 +120,22 @@ void ReadPlotWaveForm(){
 	
 	
 	double imageX[points_number];
+	double realX[points_number]; 
+	for (int i=0; i< points_number; i++){
+		imageX[i] = 0;
+		realX[i] = wfm[i];
+	}
+	
 	
 	FFT(wfm, imageX, points_number);
 	
 	double results[points_number];
 	
 	for (int i = 0; i < points_number; i++){
-		results[i] = pow(pow(wfm[i], 2.0) + pow(imageX[i], 2.0), 0.5);
+		results[i] = sqrt((realX[i]*realX[i]) + (imageX[i]*imageX[i]));
 	}
 	
+	DeleteGraphPlot(panelHandle, PANEL_GRAPHFFT, -1, VAL_IMMEDIATE_DRAW);
 	PlotXY(panelHandle, PANEL_GRAPHFFT, pointsx, results, points_number, VAL_DOUBLE, VAL_DOUBLE, VAL_FAT_LINE, VAL_SOLID_SQUARE, VAL_SOLID, 1, VAL_GREEN);
 	
 }
@@ -149,13 +157,13 @@ int main (int argc, char *argv[])
     
 	
 	InitDevices();
-	StartGeneration();
+	// StartGeneration();
 
     /* display the panel and run the user interface */
     errChk (DisplayPanel (panelHandle));
     errChk (RunUserInterface ());
 	
-	StopGeneration();
+	//StopGeneration();
 	CloseDevices();
 
 Error:
@@ -258,8 +266,87 @@ int CVICALLBACK triggerCB (int panel, int control, int event,
 	{
 		case EVENT_COMMIT:
 			
+			
 			StartGeneration();
 			ReadPlotWaveForm();
+
+			break;
+	}
+	return 0;
+}
+
+int CVICALLBACK freqListCB (int panel, int control, int event,
+		void *callbackData, int eventData1, int eventData2)
+{
+	switch (event)
+	{
+		case EVENT_COMMIT:
+			
+			GetCtrlVal(panel, PANEL_STEPSNUMBER, &N);
+			GetCtrlVal(panel, PANEL_MAXFREQ, &max_freq);
+			GetCtrlVal(panel, PANEL_MINFREQ, &min_freq);
+			GetCtrlVal(panel, PANEL_STEPDURATION, &step_duration);
+			
+			double freq_list[N], time_interval_list[N];
+			
+			fgenGenerateFreqList(N, min_freq, max_freq, step_duration, freq_list, time_interval_list);
+			
+			scopeVertical("0",3 * amplitude, SCOPE_1_MEG_OHM);
+	
+			scopeFrequency("", 10 * max_freq, points_number + points_number / 5);
+	
+			scopeTrigger("TRIG", amplitude/2, SCOPE_POSITIVE);
+			
+			scopeStart(points_number + points_number / 5);
+			
+			fgenExportTrig("PFI0");
+			
+			fgenStart(FGEN_SINE, amplitude, N, freq_list, time_interval_list);
+			
+			double wfm[points_number + points_number / 5];
+	
+			int nsr;
+			double h = 1. / (10. * max_freq);
+
+			double pointsx[points_number + points_number / 5];
+
+			for (int i = 0; i < points_number + points_number / 5; i++){
+				pointsx[i] = h * i;
+			}
+
+			while(SCOPE_COMPLETE != scopeStatus()){}
+	
+			scopeFetch("0", wfm, points_number + points_number / 5, &nsr);
+
+			DeleteGraphPlot(panelHandle, PANEL_GRAPH, -1, VAL_IMMEDIATE_DRAW);
+			SetAxisScalingMode(panelHandle, PANEL_GRAPH, VAL_LEFT_YAXIS, VAL_MANUAL, -1.5 * amplitude, 1.5 * amplitude);
+			PlotXY(panelHandle, PANEL_GRAPH, pointsx, wfm, points_number + points_number / 5, VAL_DOUBLE, VAL_DOUBLE, VAL_FAT_LINE, VAL_SOLID_SQUARE, VAL_SOLID, 1, VAL_GREEN);
+
+
+			double imageX[points_number + points_number / 5];
+			double realX[points_number + points_number / 5]; 
+			for (int i=0; i< points_number + points_number / 5; i++){
+				imageX[i] = 0;
+				realX[i] = wfm[i];
+			}
+
+
+			FFT(wfm, imageX, points_number + points_number / 5);
+
+			double results[points_number + points_number / 5];
+
+			for (int i = 0; i < points_number + points_number / 5; i++){
+				results[i] = sqrt((realX[i]*realX[i]) + (imageX[i]*imageX[i]));
+			}
+
+			DeleteGraphPlot(panelHandle, PANEL_GRAPHFFT, -1, VAL_IMMEDIATE_DRAW);
+			PlotXY(panelHandle, PANEL_GRAPHFFT, pointsx, results, points_number + points_number / 5, VAL_DOUBLE, VAL_DOUBLE, VAL_FAT_LINE, VAL_SOLID_SQUARE, VAL_SOLID, 1, VAL_GREEN);
+		
+			
+			scopeStop();
+			fgenStop();
+			
+			
 
 			break;
 	}
