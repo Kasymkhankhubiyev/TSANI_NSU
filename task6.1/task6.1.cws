@@ -47,17 +47,17 @@ Force Rebuild = False
 [File 0001]
 Path = "/d/TSANI/WORK/khubiev/task6_1/task6.1.c"
 File Type = "CSource"
-Disk Date = 3750840582
+Disk Date = 3751443467
 In Projects = "1,"
 Window Top = 62
 Window Left = 26
 Window Z-Order = 1
-Source Window State = "1,318,318,318,12,75,75,0,0,200,0,276,0,0,0,71,269,0,316,18,349,687,1,0,"
+Source Window State = "1,24,24,24,27,42,27,0,0,200,0,276,0,0,0,71,299,0,342,27,349,687,1,0,"
 
 [File 0002]
 Path = "/d/TSANI/WORK/khubiev/task6_1/task6.1.uir"
 File Type = "User Interface Resource"
-Disk Date = 3750836665
+Disk Date = 3751436279
 In Projects = "1,"
 Window Top = 32
 Window Left = 10

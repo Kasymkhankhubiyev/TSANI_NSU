@@ -49,14 +49,14 @@ static int panelHandle;
 void InitDevices(void){
 
 	ViStatus gen_state, scope_state;
-	char error[22] = "Success";
+	//char error[22] = "Success";
 	
 	gen_state = fgenSlot(6);  //PXI-5402 - gen
 	scope_state = scopeSlot(7); //PXI-5114 - scope
 	
-	if ((gen_state ==VI_FALSE) || (scope_state == VI_FALSE)){
+	/*if ((gen_state ==VI_FALSE) || (scope_state == VI_FALSE)){
 		SetCtrlVal(panelHandle, PANEL_ERRORS, error); 
-	}else SetCtrlVal(panelHandle, PANEL_ERRORS, "Success");	
+	}else SetCtrlVal(panelHandle, PANEL_ERRORS, "Success");*/	
 }
 
 void StopGeneration(){
@@ -291,9 +291,9 @@ int CVICALLBACK freqListCB (int panel, int control, int event,
 			
 			fgenGenerateFreqList(N, min_freq, max_freq, step_duration, freq_list, time_interval_list);
 			
-			scopeVertical("0",3 * amplitude, SCOPE_1_MEG_OHM);
+			scopeVertical("0", 2 * amplitude, SCOPE_1_MEG_OHM);
 	
-			scopeFrequency("", 10 * max_freq, points_number + points_number / 5);
+			scopeFrequency("", 4 * max_freq, points_number + points_number / 5);
 	
 			scopeTrigger("TRIG", amplitude/2, SCOPE_POSITIVE);
 			
@@ -303,12 +303,17 @@ int CVICALLBACK freqListCB (int panel, int control, int event,
 			
 			fgenStart(FGEN_SINE, amplitude, N, freq_list, time_interval_list);
 			
-			double wfm[points_number + points_number / 5];
+			//double wfm[points_number + points_number / 5];
+			double* wfm;
+			
+			wfm = (double *)malloc((points_number + points_number/5)*sizeof(double));
 	
 			int nsr;
-			double h = 1. / (10. * max_freq);
-
-			double pointsx[points_number + points_number / 5];
+			double h = 1. / (4. * max_freq);
+			
+			double* pointsx;
+			
+			pointsx = (double *)malloc((points_number + points_number/5)*sizeof(double));
 
 			for (int i = 0; i < points_number + points_number / 5; i++){
 				pointsx[i] = h * i;
@@ -322,18 +327,24 @@ int CVICALLBACK freqListCB (int panel, int control, int event,
 			SetAxisScalingMode(panelHandle, PANEL_GRAPH, VAL_LEFT_YAXIS, VAL_MANUAL, -1.5 * amplitude, 1.5 * amplitude);
 			PlotXY(panelHandle, PANEL_GRAPH, pointsx, wfm, points_number + points_number / 5, VAL_DOUBLE, VAL_DOUBLE, VAL_FAT_LINE, VAL_SOLID_SQUARE, VAL_SOLID, 1, VAL_GREEN);
 
-
-			double imageX[points_number + points_number / 5];
-			double realX[points_number + points_number / 5]; 
+			double* imageX;
+			
+			imageX = (double *)malloc((points_number + points_number/5)*sizeof(double));
+			double* realX;
+			
+			realX = (double *)malloc((points_number + points_number/5)*sizeof(double));
+			 
 			for (int i=0; i< points_number + points_number / 5; i++){
 				imageX[i] = 0;
 				realX[i] = wfm[i];
 			}
 
 
-			FFT(wfm, imageX, points_number + points_number / 5);
-
-			double results[points_number + points_number / 5];
+			FFT(realX, imageX, points_number + points_number / 5);
+			
+			double* results;
+			
+			results = (double *)malloc((points_number + points_number/5)*sizeof(double));
 
 			for (int i = 0; i < points_number + points_number / 5; i++){
 				results[i] = sqrt((realX[i]*realX[i]) + (imageX[i]*imageX[i]));
@@ -341,10 +352,15 @@ int CVICALLBACK freqListCB (int panel, int control, int event,
 
 			DeleteGraphPlot(panelHandle, PANEL_GRAPHFFT, -1, VAL_IMMEDIATE_DRAW);
 			PlotXY(panelHandle, PANEL_GRAPHFFT, pointsx, results, points_number + points_number / 5, VAL_DOUBLE, VAL_DOUBLE, VAL_FAT_LINE, VAL_SOLID_SQUARE, VAL_SOLID, 1, VAL_GREEN);
-		
+			//PlotXY(panelHandle, PANEL_GRAPHFFT, results, wfm, points_number + points_number / 5, VAL_DOUBLE, VAL_DOUBLE, VAL_FAT_LINE, VAL_SOLID_SQUARE, VAL_SOLID, 1, VAL_GREEN);
 			
 			scopeStop();
 			fgenStop();
+			free(wfm);
+			free(results);
+			free(pointsx);
+			free(realX);
+			free(imageX);
 			
 			
 
